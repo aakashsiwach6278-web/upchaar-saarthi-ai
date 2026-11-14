@@ -1,0 +1,177 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "नमस्ते! मैं 'उपचार-सारथी AI' (Upchaar-Saarthi AI) हूँ। 🏥\nमैं आपकी पुरानी मेडिकल हिस्ट्री और एलर्जी याद रख सकता हूँ। आज मैं आपकी क्या सहायता कर सकता हूँ?\n",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "18ff5ff2-eece-4286-acbc-924021048834",
+      "name": "When chat message received",
+      "webhookId": "56895312-5624-466b-a25a-dfa3e830ad14"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "आप 'उपचार-सारथी AI' (Upchaar-Saarthi AI) हैं, जो भारत के ग्रामीण इलाकों के लिए एक एडवांस हेल्थकेयर असिस्टेंट है। आपका काम मरीजों की पुरानी मेडिकल हिस्ट्री (बीमारी, दवाइयां, एलर्जी) को हमेशा याद रखना है। \n\nजब भी मरीज कोई लक्षण बताए, तो सबसे पहले उसकी गंभीरता के अनुसार इन 3 में से कोई एक अलर्ट लेवल (Triage) जरूर दिखाएं:\n- 🟢 हरा (सामान्य): हल्की समस्या, घरेलू देखभाल संभव।\n- 🟡 पीला (मध्यम): डॉक्टर को दिखाने की सलाह।\n- 🔴 लाल (आपातकालीन/खतरनाक): गंभीर लक्षण (जैसे सीने में दर्द, सांस फूलना, तेज बुखार या बेहोशी) — तुरंत नजदीकी अस्पताल जाएं या 108 एम्बुलेंस पर कॉल करें!\n\nकिसी भी बीमारी की सटीक जानकारी के लिए अपने 'Wikipedia Tool' का उपयोग करें। मरीजों के डिजिटल हेल्थ रिकॉर्ड और केयर-कोऑर्डिनेशन के लिए 'xSpan CareHub Tool' का उपयोग करें। हमेशा नम्रता से हिंदी/हिंग्लिश में बात करें और अंत में डॉक्टर की सलाह लेने का सुरक्षा डिस्क्लेमर जरूर दें।\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        384,
+        0
+      ],
+      "id": "b17e9b54-879e-459d-85b3-1135f9085383",
+      "name": "AI Agent",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.6,
+      "position": [
+        480,
+        256
+      ],
+      "id": "c3fa5b2f-3dac-43b5-8045-6a7736a99d38",
+      "name": "Redis Chat Memory",
+      "credentials": {
+        "redis": {
+          "id": "M4vcynbp8CFfYppo",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "qwen/qwen3.8-27b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        256,
+        208
+      ],
+      "id": "0a9050c1-b1a3-46cb-bf2b-bdaa53f03206",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "Ls5pLvZbz04dBeA0",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [
+        608,
+        272
+      ],
+      "id": "28ac299c-66a2-4da2-b2f5-8112410f0ad7",
+      "name": "Wikipedia"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool to sync patient allergy profile and digital twin health records with xSpan CareHub network.\n",
+        "url": "https://jsonplaceholder.typicode.com/posts/1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        752,
+        256
+      ],
+      "id": "ca36234d-f69e-44ed-9847-80321135ed50",
+      "name": "xSpan_CareHub_API"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wikipedia": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "xSpan_CareHub_API": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2edeb1b1-4922-40f8-811e-75a3cf938b15",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8c0d83420585f8591c460219b2ef6dea69b5140696fbc4f399ee950fad6c330b"
+  },
+  "nodeGroups": [],
+  "id": "yejBMBHQyhxiqtVY",
+  "tags": []
+}
